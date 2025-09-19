@@ -1,0 +1,30 @@
+name: Mirror Pantheon -> GitHub
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start ssh-agent and add PANTHEON key
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.PANTHEON_SSH_KEY }}
+
+      - name: Add Pantheon host key to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan git.pantheon.io >> ~/.ssh/known_hosts
+
+      - name: Mirror clone Pantheon repository
+        run: |
+          git clone --mirror "${{ secrets.PANTHEON_GIT_URL }}" pantheon.git
+
+      - name: Push mirror to GitHub
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cd pantheon.git
+          git remote set-url --push origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GH_REPO}.git"
+          git push --mirror origin
