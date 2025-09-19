@@ -3,6 +3,11 @@ name: Mirror Pantheon -> GitHub
 on:
   workflow_dispatch:
 
+env:
+  # GITHUB_TOKEN on Actionsi poolt saadaval automaatselt,
+  # PANTHEON_GIT_URL ja PANTHEON_SSH_KEY peavad olema repo Secrets'is.
+  PANTHEON_GIT_URL: ${{ secrets.PANTHEON_GIT_URL }}
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -12,14 +17,36 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.PANTHEON_SSH_KEY }}
 
-      - name: Add Pantheon host key to known_hosts
+      - name: Add Pantheon host key to known_hosts (extract host from URL)
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan git.pantheon.io >> ~/.ssh/known_hosts
+          # extract host from PANTHEON_GIT_URL, works for ssh://user@host:port/... and user@host:... forms
+          URL="${PANTHEON_GIT_URL}"
+          # remove protocol if present
+          NO_PROTO="${URL#ssh://}"
+          # remove user@ if present
+          NO_USER="${NO_PROTO#*@}"
+          # extract host:port or host/path
+          HOSTPORT="${NO_USER%%/*}"
+          # if host:port then strip :port for ssh-keyscan (ssh-keyscan can accept host:port with -p)
+          HOST="${HOSTPORT%%:*}"
+          PORT="${HOSTPORT#*:}"
+          if [ "$PORT" != "$HOSTPORT" ]; then
+            # host has explicit port
+            ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
+          fi
+          # show known_hosts for debugging
+          echo "Known hosts entries:"
+          cat ~/.ssh/known_hosts
 
       - name: Mirror clone Pantheon repository
+        env:
+          PANTHEON_GIT_URL: ${{ secrets.PANTHEON_GIT_URL }}
         run: |
-          git clone --mirror "${{ secrets.PANTHEON_GIT_URL }}" pantheon.git
+          # Use ssh agent that already has the key (webfactory/ssh-agent)
+          git clone --mirror "${PANTHEON_GIT_URL}" pantheon.git
 
       - name: Push mirror to GitHub
         env:
