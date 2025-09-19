@@ -1,0 +1,47 @@
+/* Example CSS file with syntax errors fixed */
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+} /* Fixed: Added closing brace */
+
+.header {
+    background-color: #333;
+    color: white;
+    padding: 10px 0;
+}
+
+.nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+.nav li {
+    margin-right: 20px;
+} /* Fixed: Added closing brace */
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.nav a:hover {
+    color: #ccc;
+}
+
+.content {
+    min-height: 400px;
+    padding: 40px 0;
+} /* Fixed: Added closing brace */
+
+.footer {
+    background-color: #f8f8f8;
+    text-align: center;
+    padding: 20px 0;
+    border-top: 1px solid #ddd;
+}

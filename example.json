@@ -1,0 +1,27 @@
+{
+  "name": "ky_wp",
+  "version": "1.0.0",
+  "description": "Example WordPress project",
+  "main": "index.php",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "wordpress",
+    "php",
+    "web"
+  ],
+  "author": "Lauri Liikane",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.6.0",
+    "bootstrap": "^5.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^2.0.0",
+    "phpcs": "^3.6.0"
+  }
+}

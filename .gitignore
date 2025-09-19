@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache directories
+.cache/
+.tmp/
+
+# WordPress specific
+wp-config.php
+wp-content/uploads/
+.htaccess
