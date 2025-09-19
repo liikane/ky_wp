@@ -25,14 +25,11 @@ jobs:
           HOSTPORT="${NO_USER%%/*}"
           HOST="${HOSTPORT%%:*}"
           PORT="${HOSTPORT#*:}"
-          echo "Using host: $HOST${PORT:+ port: $PORT}"
           if [ "$PORT" != "$HOSTPORT" ]; then
             ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
           else
             ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
           fi
-          echo "Known hosts entries:"
-          cat ~/.ssh/known_hosts
 
       - name: Mirror clone Pantheon repository
         env:
@@ -40,14 +37,25 @@ jobs:
         run: |
           git clone --mirror "${PANTHEON_GIT_URL}" pantheon.git
 
-      - name: Push branches and tags to GitHub (no deletions)
+      - name: Push branches and tags to GitHub (safe: no deletions)
         env:
           GH_REPO: ${{ github.repository }}
         run: |
           cd pantheon.git
-          # set push URL (uses GITHUB_TOKEN available as secret)
+          # set push URL (uses GITHUB_TOKEN)
           git remote set-url --push origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GH_REPO}.git"
-          # push all branches (creates/updates, but does NOT delete remote branches)
-          git push origin --all
-          # push all tags
+
+          # Push each local branch explicitly to avoid any delete refspecs.
+          # This pushes existing branches one by one (creates/updates on remote),
+          # but does NOT delete remote branches that don't exist locally.
+          git for-each-ref --format='%(refname:short)' refs/heads | \
+            while read -r BR; do
+              echo "Pushing branch: $BR"
+              git push origin "refs/heads/$BR:refs/heads/$BR" || {
+                echo "Failed to push branch $BR"
+                exit 1
+              }
+            done
+
+          # Push tags
           git push origin --tags
