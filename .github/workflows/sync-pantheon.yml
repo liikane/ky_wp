@@ -20,17 +20,13 @@ jobs:
           set -e
           mkdir -p ~/.ssh
           URL="${PANTHEON_GIT_URL}"
-          # remove protocol if present
           NO_PROTO="${URL#ssh://}"
-          # remove user@ if present
           NO_USER="${NO_PROTO#*@}"
-          # extract host:port or host/path
           HOSTPORT="${NO_USER%%/*}"
           HOST="${HOSTPORT%%:*}"
           PORT="${HOSTPORT#*:}"
           echo "Using host: $HOST${PORT:+ port: $PORT}"
           if [ "$PORT" != "$HOSTPORT" ]; then
-            # try ssh-keyscan with port; if it fails, fallback to host only
             ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
           else
             ssh-keyscan "$HOST" >> ~/.ssh/known_hosts
@@ -44,10 +40,14 @@ jobs:
         run: |
           git clone --mirror "${PANTHEON_GIT_URL}" pantheon.git
 
-      - name: Push mirror to GitHub
+      - name: Push branches and tags to GitHub (no deletions)
         env:
           GH_REPO: ${{ github.repository }}
         run: |
           cd pantheon.git
+          # set push URL (uses GITHUB_TOKEN available as secret)
           git remote set-url --push origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GH_REPO}.git"
-          git push --mirror origin
+          # push all branches (creates/updates, but does NOT delete remote branches)
+          git push origin --all
+          # push all tags
+          git push origin --tags
