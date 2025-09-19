@@ -53,7 +53,7 @@ jobs:
             while read -r BR; do
               echo "Pushing branch: $BR"
               git push origin "refs/heads/$BR:refs/heads/$BR" || {
-                echo "Failed to push branch $BR"
+                echo "SEE Failed to push branch $BR"
                 exit 1
               }
             done
