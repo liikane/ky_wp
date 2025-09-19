@@ -2,6 +2,11 @@ name: Mirror Pantheon -> GitHub
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_deletions:
+        description: 'Allow remote deletions (use with caution). Set to "true" to enable exact mirror including deletions.'
+        required: false
+        default: 'false'
 
 env:
   PANTHEON_GIT_URL: ${{ secrets.PANTHEON_GIT_URL }}
@@ -40,14 +45,23 @@ jobs:
         run: |
           git clone --mirror "${PANTHEON_GIT_URL}" pantheon.git
 
-      - name: Push branches and tags to GitHub (no deletions)
+      - name: Push to GitHub (conditional deletions)
         env:
           GH_REPO: ${{ github.repository }}
         run: |
           cd pantheon.git
           # set push URL (uses GITHUB_TOKEN available as secret)
           git remote set-url --push origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GH_REPO}.git"
-          # push all branches (creates/updates, but does NOT delete remote branches)
-          git push origin --all
-          # push all tags
-          git push origin --tags
+
+          if [ "${{ github.event.inputs.allow_deletions }}" = "true" ]; then
+            echo "allow_deletions is true -> performing git push --mirror origin"
+            git push --mirror origin
+          else
+            echo "allow_deletions is not true -> performing safe push (no deletions)"
+            git for-each-ref --format='%(refname:short)' refs/heads | \
+              while read -r BR; do
+                echo "Pushing branch: $BR"
+                git push origin "refs/heads/$BR:refs/heads/$BR" || { echo "Failed to push branch $BR"; exit 1; }
+              done
+            git push origin --tags
+          fi
